@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Simulador de Cobranza – Voz Natural Pro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f5f6fb; --card:#fff; --brand:#6a0dad; --brand-2:#9c27b0;
+    --text:#1f2937; --muted:#6b7280; --line:#e5e7eb;
+    --ok:#10b981; --warn:#f59e0b; --danger:#ef4444;
+    --yellow:#fff59d;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:var(--text)}
+  .wrap{max-width:1200px;margin:24px auto;padding:0 16px}
+  .app-title{font-size:24px;font-weight:700;margin:4px 0 16px;color:#111827}
+  .top-grid{display:grid;grid-template-columns:1fr 1.4fr;gap:16px}
+  @media (max-width:980px){.top-grid{grid-template-columns:1fr}}
+  .card{background:var(--card);border-radius:10px;box-shadow:0 6px 16px rgba(0,0,0,.06);border:1px solid var(--line)}
+  .card h3{margin:0;padding:14px 16px;border-bottom:1px solid var(--line);font-size:18px;font-weight:700}
+  .card .body{padding:16px}
+  .form-grid{display:grid;gap:10px}
+  .field label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
+  .field input, .field select, .field textarea{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:#fafafa;outline:none}
+  input:focus, select:focus, textarea:focus{border-color:var(--brand)}
+  .btn{border:none;padding:10px 14px;border-radius:8px;font-weight:600;cursor:pointer}
+  .btn.purple{background:var(--brand);color:#fff}
+  .btn.gray{background:#eef0f6;color:#111827;border:1px solid var(--line)}
+  .btn.success{background:var(--ok);color:#fff}
+  .btn.warning{background:var(--warn);color:#111}
+  .btn.danger{background:var(--danger);color:#fff}
+  .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+  .section-title{margin:18px 0 8px;font-weight:800}
+  .table-card{background:var(--card);border-radius:10px;box-shadow:0 6px 16px rgba(0,0,0,.06);border:1px solid var(--line)}
+  table{width:100%;border-collapse:collapse}
+  thead{background:#f9fafb}
+  th,td{font-size:13px;padding:10px 12px;border-top:1px solid var(--line);text-align:left}
+  tr:hover td{background:#fafafa}
+  .accent-info{background:linear-gradient(180deg,#f6f0ff 0%,#ffffff 60%);border:1px solid #e1d2ff;box-shadow:0 8px 20px rgba(106,13,173,.08)}
+  .accent-info h3{background:linear-gradient(90deg,var(--brand) 0%,#9d6ddc 100%);color:#fff;border-bottom:0;border-radius:10px 10px 0 0}
+  .accent-cuenta{border:2px solid var(--brand);box-shadow:0 8px 20px rgba(106,13,173,.08);border-radius:10px}
+  .accent-cuenta thead{background:#f1e8ff}
+  .accent-cuenta th{color:#4b166b}
+  /* Drawer / Chat */
+  .drawer{position:fixed;top:0;right:-520px;width:520px;max-width:92vw;height:100vh;background:#f7f5ff;border-left:1px solid var(--line);transition:right .25s;display:flex;flex-direction:column;box-shadow:-12px 0 24px rgba(0,0,0,.08);z-index:50}
+  .drawer.open{right:0}
+  .drawer-head{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;background:var(--brand);color:#fff;gap:8px;flex-wrap:wrap}
+  .drawer-head .btn{padding:8px 10px}
+  .tts-controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .tts-controls .small{font-size:12px;opacity:.9}
+  .tts-controls select,.tts-controls input[type="range"]{accent-color:#fff}
+  .chat{flex:1;padding:12px;overflow:auto;display:flex;flex-direction:column;gap:8px;position:relative;background:#f9f7ff}
+  .msg{max-width:78%;padding:10px 12px;border-radius:14px;font-size:14px;line-height:1.35}
+  .asesor{align-self:flex-end;background:var(--brand-2);color:#fff;border-bottom-right-radius:4px}
+  .cliente{align-self:flex-start;background:#c4a1ff;color:#1f1147;border-bottom-left-radius:4px}
+  .drawer-actions{padding:12px;border-top:1px solid var(--line);display:flex;gap:8px;flex-wrap:wrap;background:#fff}
+  .pill{display:inline-flex;align-items:center;gap:8px;background:#f1e8ff;color:#4b166b;border:1px solid #e3d3ff;padding:6px 10px;border-radius:999px;font-size:12px}
+
+  /* Modal feedback */
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;align-items:center;justify-content:center;z-index:999}
+  .modal.open{display:flex}
+  .modal-card{background:#fff;border-radius:12px;max-width:980px;width:94vw;box-shadow:0 20px 50px rgba(0,0,0,.25);border:1px solid var(--line)}
+  .modal-head{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid var(--line);gap:8px;flex-wrap:wrap}
+  .modal-body{padding:14px 16px;max-height:72vh;overflow:auto}
+
+  .compromisos{margin-top:12px;border:1px solid var(--line);border-radius:10px;background:#fbfbff;padding:10px}
+  .compromisos .comp-head{display:flex;align-items:center;gap:14px;font-weight:700;margin-bottom:8px}
+  .compromisos .comp-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  .compromisos .currency{padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:#fff}
+  .compromisos .btn.add{background:#16a34a;color:#fff;padding:8px 12px;border-radius:8px;border:0;cursor:pointer}
+  .compromisos th,.compromisos td{font-size:12px;padding:6px 8px;border-top:1px solid var(--line)}
+  .muted{color:var(--muted)}
+  .is-hidden{display:none !important}
+  .row{display:flex;gap:10px}
+
+  /* Ocultar/mostrar chat para asesor */
+  .chat.blurred .msg{ filter: blur(10px); user-select: none; pointer-events: none; }
+  .chat.blurred::after{
+    content: "🔒 El texto de la conversación está oculto para el asesor (puntos de quiebre resaltados)";
+    position: sticky; top: 0; display:block;
+    background:#efe9ff; border:1px dashed #b39ddb; color:#4b166b;
+    padding:8px 10px; margin-bottom:8px; border-radius:8px;
+  }
+
+  /* Marcadores */
+  .msg.bp{ background: var(--yellow) !important; }
+  .bp-badge{position:absolute; right:8px; top:-10px; background:#111827; color:#fff; font-size:10px; padding:2px 6px; border-radius:999px; opacity:.9}
+
+  /* Feedback tips */
+  .improve li{ background: var(--yellow); padding:6px 8px; border-radius:8px; margin-bottom:6px }
+  .tips li{ background:#fff; border:1px dashed #ddd; padding:6px 8px; border-radius:8px; margin-bottom:6px }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="app-title">Panel de Cobranza</div>
+
+    <div class="top-grid">
+      <section class="card accent-info">
+        <h3>Ficha de Información</h3>
+        <div class="body">
+          <div class="form-grid">
+            <div class="field">
+              <label>Tipo de Cliente</label>
+              <select id="tipoCliente">
+                <option value="banco">Banco</option>
+                <option value="dupree">Dupree</option>
+                <option value="natura">Natura</option>
+              </select>
+            </div>
+            <div class="field"><label>Razón Social</label><input id="rz"></div>
+            <div class="field"><label>Documento</label><input id="doc"></div>
+            <div class="field"><label>Dirección</label><input id="dir"></div>
+            <div class="field"><label>Edad</label><input id="edad"></div>
+            <div class="field"><label>Salario</label><input id="sal"></div>
+          </div>
+          <div style="margin-top:10px" class="row">
+            <span class="pill">🎙️ Simulador de voz listo</span>
+            <span class="pill" id="statusPill">Esperando…</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h3>Gestión de Contacto</h3>
+        <div class="body">
+          <div class="field"><label>Teléfonos</label><select id="telefono"></select></div>
+
+          <div class="row">
+            <div class="field" style="flex:1">
+              <label>Tipo de Contacto</label>
+              <select id="tipoContacto">
+                <option>-- Seleccionar --</option>
+                <option>Titular</option>
+                <option>Tercero</option>
+                <option>No Contactable</option>
+              </select>
+            </div>
+            <div class="field" style="flex:1">
+              <label>Resultado de la Llamada</label>
+              <select id="resultado"><option>-- Seleccionar Resultado --</option></select>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Observación</label>
+            <textarea id="obs" rows="3" placeholder="Escribe tus observaciones..."></textarea>
+          </div>
+
+          <div id="compromisosBox" class="compromisos is-hidden">
+            <div class="comp-head">
+              <span>Compromisos</span>
+              <label style="font-weight:500"><input type="checkbox" id="compSubir"> Subir al banco</label>
+            </div>
+            <div class="comp-row">
+              <span class="currency">S/</span>
+              <input id="compMonto" type="number" min="0" placeholder="Monto">
+              <input id="compFecha" type="date">
+              <select id="compTipo">
+                <option>Cancelación</option>
+                <option>Campaña</option>
+                <option>Propuesta</option>
+              </select>
+              <button id="compAdd" class="btn add" title="Agregar">+ Agregar</button>
+            </div>
+            <table style="width:100%;margin-top:8px;border-collapse:collapse">
+              <thead><tr><th>Monto</th><th>Fecha</th><th>Tipo</th><th>Subir</th><th></th></tr></thead>
+              <tbody id="compList"><tr><td colspan="5" class="muted" style="text-align:center">Sin compromisos</td></tr></tbody>
+            </table>
+          </div>
+
+          <div class="actions">
+            <button class="btn gray" id="btnLimpiar">Limpiar</button>
+            <button class="btn warning" id="btnNueva">Nueva Llamada</button>
+            <button class="btn gray" id="btnVerChat">Ver Conversación</button>
+            <button class="btn purple" id="btnFeedback">Ver Feedback</button>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <h3 class="section-title">Detalle de la Cuenta</h3>
+    <div class="table-card accent-cuenta">
+      <table>
+        <thead><tr>
+          <th style="width:24%">Campaña</th><th>Producto</th><th>D. Total</th>
+          <th>M. Capital</th><th>M. Campaña</th><th>Días Mora</th><th>% Descuento</th>
+        </tr></thead>
+        <tbody id="cuentaBody"></tbody>
+      </table>
+    </div>
+
+    <h3 class="section-title">Historial de Tipificaciones</h3>
+    <div class="table-card">
+      <table>
+        <thead><tr><th style="width:20%">Cliente</th><th>Tipo Contacto</th><th>Resultado</th><th>Observación</th></tr></thead>
+        <tbody id="historialBody"><tr><td colspan="4" style="text-align:center" class="muted">Sin registros</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+  <aside class="drawer" id="drawer">
+    <div class="drawer-head">
+      <h4>Conversación con el Cliente</h4>
+      <div class="tts-controls">
+        <label class="small">Motor
+          <select id="selMotor">
+            <option value="auto">Auto</option>
+            <option value="local">Local (Web Speech)</option>
+            <option value="openai">OpenAI TTS</option>
+          </select>
+        </label>
+        <label class="small">Género
+          <select id="selGenero">
+            <option value="auto">Auto</option>
+            <option value="f">Femenino</option>
+            <option value="m">Masculino</option>
+          </select>
+        </label>
+        <label class="small">Voz Local
+          <select id="selVozLocal"><option value="auto">Auto (mejor español)</option></select>
+        </label>
+        <button class="btn gray" id="btnRefrescarVoces">↻ Voces</button>
+        <label class="small">Vel.
+          <input type="range" id="rngSpeed" min="0.85" max="1.15" step="0.01" value="1.00">
+        </label>
+        <span class="pill" id="ttsInfo">TTS listo</span>
+      </div>
+      <div>
+        <button class="btn gray" id="micStart">▶️ Iniciar</button>
+        <button class="btn gray" id="micPause">⏸️ Pausa</button>
+        <button class="btn gray" id="micResume">⏯️ Continuar</button>
+        <button class="btn danger" id="micStop">⏹️ Detener</button>
+        <button class="btn warning" id="closeDrawer">Cerrar</button>
+      </div>
+    </div>
+    <div class="chat blurred" id="chat"></div>
+    <div class="drawer-actions">
+      <button class="btn purple" id="exportar">Descargar Chat (.xlsx)</button>
+      <button class="btn success" id="chatImg">Descargar Chat (Imagen)</button>
+    </div>
+  </aside>
+
+  <div class="modal" id="modalFeedback">
+    <div class="modal-card" id="modalCard">
+      <div class="modal-head">
+        <strong>Feedback de la gestión del asesor</strong>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn success" id="btnDownloadFB">Descargar imagen</button>
+          <button class="btn warning" id="btnCloseFB">Cerrar</button>
+        </div>
+      </div>
+      <div class="modal-body" id="fbBody">
+        <em>Genera una conversación y luego presiona “Ver Feedback”.</em>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script>
+  "use strict";
+  const log=(...a)=>{try{console.log(...a)}catch{}};
+
+  /* ===== Configuración backend (mismo dominio en Vercel) ===== */
+  const BASE_API = ''; // si usas Pages + Vercel, pon aquí tu URL de backend. Para Vercel todo-junto, déjalo vacío.
+
+  /* ===== Datos demo ===== */
+  const clientesBanco = [
+    {rz:'GARCIA PEREZ RICHARD EMERSON',doc:'08992480',dir:'JR. WASHINGTON 1208 DPT 710',edad:'52 (Generación X)',sal:'1130',phones:['948101462 - Efectivo','999888777 - Casa'],
+     cuenta:{camp:'CS HIGH POTENCIAL AGOSTO 2025',prod:'Préstamo Personal',dtotal:'9626',mcap:'6976',mcamp:'3837',dias:'1952',desc:'45%'}},
+    {rz:'PEREZ LOPEZ MARIA FERNANDA',doc:'70451233',dir:'AV. LOS OLIVOS 345 INT 201',edad:'36 (Millennial)',sal:'1850',phones:['987654321 - Celular','(01) 489-2231 - Casa'],
+     cuenta:{camp:'RECUPERA SETIEMBRE 2025',prod:'Tarjeta',dtotal:'3411',mcap:'2785',mcamp:'1120',dias:'356',desc:'30%'}},
+    {rz:'TORRES RAMIREZ JOSE LUIS',doc:'09234451',dir:'JR. PUNO 640 DEP 402',edad:'45 (Generación X)',sal:'2200',phones:['912345678 - Trabajo','(01) 765-4432 - Casa'],
+     cuenta:{camp:'RECOVERY VIP 2025',prod:'Préstamo Personal',dtotal:'12880',mcap:'8320',mcamp:'4151',dias:'1200',desc:'50%'}}
+  ];
+  const clientesDupree = [
+    {rz:'RODRIGUEZ LOPEZ ANA',doc:'45678123',dir:'AV. FLORES 123',edad:'29 (Millennial)',sal:'900',phones:['987123456 - Celular'],
+     cuenta:{camp:'DUPREE CAMPAÑA OCT 2025',prod:'Catálogo Ropa y Accesorios',dtotal:'820',mcap:'600',mcamp:'220',dias:'90',desc:'15%'}},
+    {rz:'VARGAS QUISPE LUCIA',doc:'47890123',dir:'PSJ. GARDENIAS 456',edad:'41 (Generación X)',sal:'1100',phones:['995112233 - Celular'],
+     cuenta:{camp:'DUPREE CAMPAÑA SEP 2025',prod:'Catálogo Ropa',dtotal:'1040',mcap:'700',mcamp:'340',dias:'150',desc:'18%'}}
+  ];
+  const clientesNatura = [
+    {rz:'SANCHEZ TORRES CARLA',doc:'87654321',dir:'JR. OLIVOS 234',edad:'35 (Millennial)',sal:'1200',phones:['965432187 - Celular'],
+     cuenta:{camp:'NATURA CAMPAÑA AGO 2025',prod:'Perfumes y Cremas',dtotal:'650',mcap:'400',mcamp:'250',dias:'120',desc:'20%'}},
+    {rz:'MENDOZA ROSALES PATRICIA',doc:'81234567',dir:'AV. UNIVERSITARIA 450',edad:'39 (Millennial)',sal:'1300',phones:['984556677 - Celular'],
+     cuenta:{camp:'NATURA CAMPAÑA JUL 2025',prod:'Cremas y Maquillaje',dtotal:'780',mcap:'520',mcamp:'260',dias:'210',desc:'22%'}}
+  ];
+
+  /* ===== DOM ===== */
+  const cuentaBody=document.getElementById('cuentaBody');
+  const telefono=document.getElementById('telefono');
+  const rz=document.getElementById('rz'); const doc=document.getElementById('doc'); const dir=document.getElementById('dir');
+  const edad=document.getElementById('edad'); const sal=document.getElementById('sal');
+  const tipoClienteSelect=document.getElementById('tipoCliente');
+  const drawer = document.getElementById('drawer'); const chat = document.getElementById('chat');
+  const statusPill = document.getElementById('statusPill');
+  const tipoSel=document.getElementById('tipoContacto'); const resultadoSel=document.getElementById('resultado'); const obs=document.getElementById('obs');
+
+  /* TTS controles */
+  const selMotor=document.getElementById('selMotor');
+  const selGenero=document.getElementById('selGenero');
+  const selVozLocal=document.getElementById('selVozLocal');
+  const btnRefrescarVoces=document.getElementById('btnRefrescarVoces');
+  const rngSpeed=document.getElementById('rngSpeed'); const ttsInfo=document.getElementById('ttsInfo');
+
+  /* STT */
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const recognition = SpeechRecognition ? new SpeechRecognition() : null;
+  if(recognition){ recognition.lang='es-ES'; recognition.interimResults=false; recognition.continuous=true; }
+
+  /* Estados */
+  let conversationLocked=false, conversationPaused=false, processing=false, lastCall=0, lastText='', lastAt=0;
+  const RATE_LIMIT_MS=1000;
+  function recognitionListening(){ return window.__listening===true; }
+  function setListening(v){ window.__listening=!!v; updateMicButtons(); }
+  function setRecStatus(t){ statusPill.textContent=t; }
+
+  /* Prompts */
+  const promptsIniciales={
+    banco:`Eres una persona a la que acaban de llamar por teléfono, pero al inicio NO sabes por qué te llaman.
+Cuando el asesor mencione tu nombre y los DOS apellidos completos, activas tu papel de cliente de BANCO con deuda vencida.
+Eres preguntón y con necesidades. Objeciones: no alcanza el dinero, dudas sobre montos, alternativas de pago.
+Aceptas pagar si el asesor rebate tu objeción del MONTO CAPITAL o MONTO CAMPAÑA más de 3 veces, o si ofrece una alternativa clara (hoy / 24 / 48 / 72h).
+Responde en 1–3 frases.`,
+    dupree:`Eres una persona a la que acaban de llamar. Activas tu papel con nombre + dos apellidos. Cliente DUPREE con deuda; objeciones: no recibí pedidos, clientas no pagaron, ventas bajas. Aceptas bajo las mismas reglas. Responde en 1–3 frases.`,
+    natura:`Te llaman y no sabes por qué. Activas tu papel con nombre + dos apellidos. Cliente NATURA con deuda; objeciones: ventas bajas, gastos médicos, etc. Aceptas bajo las mismas reglas. Responde 1–3 frases.`
+  };
+  let tipoClienteSel='banco';
+  let historial=[{role:'system',content:promptsIniciales[tipoClienteSel]}];
+  let rolActivado=false;
+
+  /* Puntos de quiebre */
+  const RX_BP={
+    askMonto:/(cu[aá]nt[oa].{0,20}(tiene|puede).{0,20}(pagar|abonar)|monto.{0,15}pagar|con\s*cu[aá]nto.{0,15}pagar|cu[aá]nto.{0,15}cancelar)/i,
+    capital:/capital/i, cuotas:/cuota/i, camp:/campan(a|o)|campaña|descuento/i, abono:/abono|propuesta/i,
+    urg:/\bhoy\b|(?:24|48|72)\s*h/i, cierreCliente:/\b(acepto|de acuerdo|ok\s*(pago|va)|voy a pagar|sí pago|si pago|puedo pagar hoy|cancelar[ée]?|lo hago hoy)\b/i
+  };
+  function detectarPuntoQuiebre(texto,rol){
+    if(rol==='asesor'){ if(RX_BP.askMonto.test(texto)) return 'Pregunta monto disponible';
+      if(RX_BP.capital.test(texto)) return 'Oferta capital';
+      if(RX_BP.cuotas.test(texto)) return 'Oferta cuotas';
+      if(RX_BP.camp.test(texto)) return 'Oferta monto campaña';
+      if(RX_BP.abono.test(texto)) return 'Oferta abono/propuesta';
+      if(RX_BP.urg.test(texto)) return 'Urgencia de pago';
+    }else{ if(RX_BP.cierreCliente.test(texto)) return 'Cierre / aceptación del cliente'; }
+    return null;
+  }
+  /* Chat helpers */
+  let queue=[];
+  function agregarMensaje(texto,tipo){
+    const d=document.createElement('div'); d.className='msg '+tipo; d.textContent=texto;
+    const label=detectarPuntoQuiebre(texto.replace(/^([👤🤖]\s*\w+:\s*)/,'').trim(), tipo==='asesor'?'asesor':'cliente');
+    if(label){ d.classList.add('bp'); d.style.position='relative'; const b=document.createElement('span'); b.className='bp-badge'; b.textContent=label; d.appendChild(b); d.dataset.breakpoint=label; }
+    chat.appendChild(d); chat.scrollTop=chat.scrollHeight;
+  }
+  if(recognition){
+    recognition.onresult=(e)=>{ const t=e.results[e.results.length-1][0].transcript; enqueueAsesor(t); };
+    recognition.onstart=()=>{ setRecStatus('Grabando…'); setListening(true); conversationPaused=false; };
+    recognition.onend=()=>{ setListening(false); if(!conversationLocked && conversationPaused) setRecStatus('Pausada'); else if(!conversationLocked) setRecStatus('Listo'); };
+  }
+  function parseNombreApellidos(v){ const p=(v||'').trim().split(/\s+/); return p.length>=3?{apellidos:[p[0],p[1]],nombres:p.slice(2)}:{apellidos:[p[0]||''],nombres:p.slice(1)} }
+  function asesorMencionoNombreCompleto(texto){
+    const {apellidos,nombres}=parseNombreApellidos(rz.value||'');
+    const t=(texto||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+    const aps=apellidos.map(a=>(a||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')).filter(Boolean);
+    const nms=nombres.map(n=>(n||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')).filter(Boolean);
+    if(aps.length===0||nms.length===0) return false;
+    const hasAp1=t.includes(aps[0]); const hasAp2=aps[1]?t.includes(aps[1]):true;
+    const hasAnyNombre=nms.some(nn=>t.includes(nn));
+    return hasAp1 && hasAp2 && hasAnyNombre;
+  }
+  async function enqueueAsesor(text){
+    if(conversationLocked) return alert('Esta conversación fue finalizada. Inicia una nueva para continuar.');
+    text=(text||'').trim(); const now=Date.now(); if(!text) return;
+    if(text===lastText && (now-lastAt)<2000) return; lastText=text; lastAt=now;
+    queue.push(text); if(!processing) processQueue();
+  }
+  async function processQueue(){
+    if(processing) return; processing=true;
+    while(queue.length){
+      if(conversationLocked) break;
+      const t=queue.shift();
+      agregarMensaje('👤 Asesor: '+t,'asesor');
+      if(!rolActivado && asesorMencionoNombreCompleto(t)){ rolActivado=true; historial.push({role:'system',content:`⚠️ Activa papel ${tipoClienteSel.toUpperCase()} según instrucciones.`}); }
+      const wait=Math.max(0,RATE_LIMIT_MS-(Date.now()-lastCall)); if(wait) await new Promise(r=>setTimeout(r,wait));
+      await respuestaClienteStream(t); lastCall=Date.now();
+    }
+    processing=false;
+  }
+  /* ===== Detección de voces locales y selección por género ===== */
+  let webVoices=[];
+  function voiceGenderHeuristic(nameLang){
+    const s=(nameLang||'').toLowerCase();
+    const fem=['female','mujer','sabina','elvira','sofia','sofía','camila','helena','luisa','laura','paola','carla','maría','maria','ximena','paulina','luz','ana'];
+    const masc=['male','hombre','diego','jorge','pablo','carlos','rafael','alberto','miguel','antonio','jesus','jesús','leo','luis'];
+    if(fem.some(x=>s.includes(x))) return 'f';
+    if(masc.some(x=>s.includes(x))) return 'm';
+    return 'u';
+  }
+  function refreshVoicesList(){
+    if(!('speechSynthesis' in window)){ ttsInfo.textContent='Sin Web Speech'; return; }
+    webVoices=speechSynthesis.getVoices()||[];
+    selVozLocal.innerHTML='<option value="auto">Auto (mejor español)</option>';
+    const esp = webVoices.filter(v=>/^(es(-|_)(ES|MX|US|AR|CL|PE|CO)|es|Spanish)/i.test(v.lang||v.name));
+    esp.forEach((v,i)=>{
+      const g=voiceGenderHeuristic((v.name||'')+' '+(v.lang||'')); const tag=g==='f'?'F':g==='m'?'M':'?';
+      const opt=document.createElement('option'); opt.value='i:'+i; opt.textContent=`${v.name} (${tag})`;
+      selVozLocal.appendChild(opt);
+    });
+    ttsInfo.textContent = esp.length? `Voces ES: ${esp.length}` : 'Sin voces ES';
+  }
+  function preloadWebVoices(){
+    if(!('speechSynthesis' in window)) return;
+    const grab=()=>{refreshVoicesList();};
+    grab(); speechSynthesis.onvoiceschanged=grab;
+  }
+  preloadWebVoices();
+  btnRefrescarVoces.addEventListener('click',refreshVoicesList);
+
+  function chooseSpanishVoiceByPrefs(){
+    const mode=selVozLocal.value;
+    const speed=parseFloat(rngSpeed.value||'1')||1;
+    if(mode.startsWith('i:')){
+      const idx=+mode.split(':')[1]; const v=webVoices[idx]; return {voice:v, rate:speed, pitch:1};
+    }
+    const esp = (webVoices||[]).filter(v=>/^(es(-|_)(ES|MX|US|AR|CL|PE|CO)|es|Spanish)/i.test(v.lang||v.name));
+    const prefG=selGenero.value;
+    const pickByG=(g)=> esp.find(v=>voiceGenderHeuristic((v.name||'')+' '+(v.lang||''))===g);
+    let voice = (prefG==='f' && pickByG('f')) || (prefG==='m' && pickByG('m')) || esp[0];
+    return {voice, rate:speed, pitch:1};
+  }
+
+  /* Prosodia humana */
+  function prosodiaNatural(text){
+    let t=(text||'').replace(/\s+/g,' ').trim();
+    t=t.replace(/,\s*/g,', … ');
+    t=t.replace(/(\d[\d.,]*)/g,'$1, ');
+    t=t.replace(/\?\s*/g,'? … ');
+    return t;
+  }
+  function splitIntoSentences(txt){
+    const parts = txt.match(/[^.!?…\n]+[.!?…\n]*/g) || [txt];
+    const out=[]; let cur='';
+    for(const p of parts){ if((cur+p).length>140){ if(cur) out.push(cur.trim()); cur=p; } else cur+=p; }
+    if(cur) out.push(cur.trim()); return out;
+  }
+
+  async function speakWebNatural(text){
+    if(!('speechSynthesis' in window)) return false;
+    const cfg=chooseSpanishVoiceByPrefs(); const voice=cfg.voice;
+    if(!voice) return false;
+    if(speechSynthesis.speaking) speechSynthesis.cancel();
+    const chunks=splitIntoSentences(prosodiaNatural(text));
+    for(const ck of chunks){
+      await new Promise(res=>{
+        const u=new SpeechSynthesisUtterance(ck);
+        u.voice=voice; u.lang=voice.lang;
+        const jitter=()=> (Math.random()*0.06 - 0.03);
+        u.rate=Math.max(0.8, Math.min(1.2, cfg.rate + jitter()));
+        u.pitch=Math.max(0.85, Math.min(1.15, 1.0 + jitter()));
+        u.volume=1;
+        u.onend=()=>setTimeout(res, 40 + Math.min(400, ck.length));
+        speechSynthesis.speak(u);
+      });
+    }
+    return true;
+  }
+
+  /* OpenAI TTS por proxy backend */
+  function detectarGeneroCliente(){
+    const tokens=(rz.value||'').trim().split(/\s+/);
+    const nombre = tokens[2] || tokens[0] || '';
+    const fem=["ana","maria","maría","carla","lucia","lucía","patricia","fernanda","sofia","sofía","andrea","paola","diana","veronica","verónica","karina","daniela","natalia","laura","carolina","gabriela","jessica","paula"];
+    return fem.some(x=>nombre.toLowerCase().startsWith(x)) ? "f" : "m";
+  }
+  function pickOpenAIVoice(){
+    const pref=selGenero.value==='auto'? detectarGeneroCliente() : selGenero.value;
+    return pref==='f' ? 'verse' : 'alloy';
+  }
+  async function playWithFade(src, fadeMs=120){
+    return new Promise(res=>{
+      const audio=new Audio(src);
+      const ctx=new (window.AudioContext||window.webkitAudioContext)();
+      const srcNode=ctx.createMediaElementSource(audio);
+      const gain=ctx.createGain(); gain.gain.value=0.0001;
+      srcNode.connect(gain).connect(ctx.destination);
+      const now=ctx.currentTime;
+      gain.gain.exponentialRampToValueAtTime(1.0, now + fadeMs/1000);
+      audio.onended=()=>{ const end=ctx.currentTime; gain.gain.exponentialRampToValueAtTime(0.0001, end + fadeMs/1000); setTimeout(()=>{ctx.close();res();}, fadeMs); };
+      audio.play();
+    });
+  }
+  async function speakOpenAI(text){
+    const voice=pickOpenAIVoice();
+    try{
+      const r=await fetch(`${BASE_API}/api/tts`,{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({ text: prosodiaNatural(text), voice })
+      });
+      if(!r.ok) throw new Error('TTS '+r.status);
+      const buf=await r.arrayBuffer(); const blob=new Blob([buf],{type:'audio/mpeg'});
+      const url=URL.createObjectURL(blob); await playWithFade(url,120); URL.revokeObjectURL(url);
+      return true;
+    }catch(e){ log(e); return false; }
+  }
+
+  /* Orquestador de voz */
+  async function hablar(text){
+    const motor=selMotor.value; // auto/local/openai
+    if(motor==='local'){
+      const ok=await speakWebNatural(text);
+      if(ok) return;
+      await speakOpenAI(text); return;
+    }
+    if(motor==='openai'){
+      const ok=await speakOpenAI(text);
+      if(ok) return;
+      await speakWebNatural(text); return;
+    }
+    if(selGenero.value!=='auto'){
+      const hasGoodLocal = (()=>{const cfg=chooseSpanishVoiceByPrefs(); return !!cfg.voice;})();
+      if(!hasGoodLocal){ await speakOpenAI(text); return; }
+    }
+    const okAuto=await speakWebNatural(text);
+    if(okAuto) return;
+    await speakOpenAI(text);
+  }
+
+  /* ===== Chat (vía proxy backend, sin stream) ===== */
+  async function respuestaClienteStream(input){
+    if(conversationLocked) return;
+    const bubble=document.createElement('div'); bubble.className='msg cliente'; bubble.textContent='🤖 Cliente: '; chat.appendChild(bubble); chat.scrollTop=chat.scrollHeight;
+    try{
+      const tag = rolActivado ? "[ROL_ACTIVADO]" : "[SIN_MOTIVO_AUN]";
+      historial.push({role:'user',content:`${tag} Asesor: ${input}`});
+      const r=await fetch(`${BASE_API}/api/chat`,{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({messages:historial,max_tokens:120,temperature:1.0})
+      });
+      if(!r.ok){ const err=await r.text(); throw new Error('Chat '+r.status+' '+err); }
+      const data=await r.json();
+      const full=(data.text||'').trim()||'Disculpe, la señal está inestable. ¿Me puede repetir?';
+      bubble.textContent='🤖 Cliente: '+full; chat.scrollTop=chat.scrollHeight;
+
+      const label=detectarPuntoQuiebre(full,'cliente');
+      if(label){ bubble.classList.add('bp'); bubble.dataset.breakpoint=label; const b=document.createElement('span'); b.className='bp-badge'; b.textContent=label; bubble.style.position='relative'; bubble.appendChild(b); }
+
+      if(full){await hablar(full);} historial.push({role:'assistant',content:full}); return full;
+    }catch(e){ log(e); const fallback='Disculpe, la señal está inestable. ¿Me puede repetir?'; bubble.textContent='🤖 Cliente: '+fallback; await hablar(fallback); return fallback; }
+  }
+
+  /* ===== Tipificaciones / Compromisos ===== */
+  const tipifMap={
+    'Titular': ['1109-ENCARGADO DEL PAGO DE LAS OBLIGACIONES','1111-PROMESA DE PAGO','1112-MENSAJE A TITULAR','1113-CLIENTE CON RECLAMO','1114-LLAMAR AL CLIENTE EN HORARIO ESPECIFICO','1115-RENUENTE','1117-CLIENTE CANCELO','1118-RECORDAR PROMESA','1119-PROMESA DE PAGO PARCIAL','1126-CLIENTE CON INTENCION DE PAGO','8888-NEGOCIACION'],
+    'Tercero': ['1121-MENSAJE CON FAMILIAR','1122-MENSAJE A TERCERO RELACIONADO','1130-FALLECIDOS','1230-MENSAJE A TERCERO NO RELACIONADO (EQUIVOCADO)'],
+    'No Contactable': ['1110-TITULAR SE IDENTIFICA Y CORTA LLAMADA','3331-TELEFONO FUERA DE SERVICIO','3332-LLAMADA VACIA','3338-CONTESTA Y CORTA LLAMADA','3339-TELEFONO NO CONTESTA','3358-TELEFONO NO EXISTE','3359-TELEFONO MARCADO INCORRECTO']
+  };
+  function setResultadoOptions(kind){
+    resultadoSel.innerHTML='<option>-- Seleccionar Resultado --</option>';
+    (tipifMap[kind]||[]).forEach(t=>{const o=document.createElement('option');o.textContent=t;resultadoSel.appendChild(o);});
+  }
+  function toggleCompromisos(){ const show=/PROMESA DE PAGO/i.test(resultadoSel.value||''); document.getElementById('compromisosBox').classList.toggle('is-hidden',!show); }
+  tipoSel.addEventListener('change',e=>{ setResultadoOptions(e.target.value); toggleCompromisos(); });
+  resultadoSel.addEventListener('change',()=>toggleCompromisos());
+
+  /* Compromisos tabla */
+  const compMonto=document.getElementById('compMonto'), compFecha=document.getElementById('compFecha'), compTipo=document.getElementById('compTipo'), compSubir=document.getElementById('compSubir');
+  const compAdd=document.getElementById('compAdd'), compList=document.getElementById('compList'); let compromisos=[];
+  function renderCompromisos(){ if(compromisos.length===0){compList.innerHTML='<tr><td colspan="5" class="muted" style="text-align:center">Sin compromisos</td></tr>';return;}
+    compList.innerHTML=''; compromisos.forEach((c,i)=>{const tr=document.createElement('tr'); tr.innerHTML=`<td>${c.monto}</td><td>${c.fecha}</td><td>${c.tipo}</td><td>${c.subir?'Sí':'No'}</td><td><button class="btn danger" style="padding:4px 8px" data-i="${i}">×</button></td>`; compList.appendChild(tr);});}
+  compAdd.addEventListener('click',()=>{const m=(compMonto.value||'').trim(); const f=compFecha.value||''; const t=compTipo.value||''; if(!m||!f){ alert('Completa Monto y Fecha'); return; } compromisos.push({monto:m,fecha:f,tipo:t,subir:!!compSubir.checked}); compMonto.value=''; renderCompromisos();});
+  compList.addEventListener('click',e=>{const i=e.target?.dataset?.i; if(i!=null){compromisos.splice(+i,1); renderCompromisos();}});
+
+  /* Exportar XLSX */
+  document.getElementById('exportar').addEventListener('click',()=>{
+    const conv=[...document.querySelectorAll('.msg')].map((m,i)=>({Orden:i+1,Remitente:m.classList.contains('asesor')?'Asesor':'Cliente',Mensaje:m.textContent.replace(/^👤 Asesor: |^🤖 Cliente: /,''),'Punto de quiebre': m.dataset.breakpoint || ''}));
+    if(conv.length===0){alert('No hay mensajes.');return;}
+    const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(conv),'Conversación');
+    const fb=computeFeedback(); const fullName=`${fb.meta.firstName} ${fb.meta.apellidos.join(' ')}`.trim();
+    const evalAOA=[['Resumen'],['Puntaje total',fb.totalScore],['Cliente',fullName||rz.value],[],['Puntos por sección (ponderados)'],['Saludo y Presentación (10%)',fb.pts.saludo10],['Motivo y Sondeo (30%)',fb.pts.motivo30],['Negociación (60%)',fb.pts.negociacion60],[],['Detalle negociación'],['Capital', fb.pts.detalleNegociacion.capital, '/18'],['Cuotas',  fb.pts.detalleNegociacion.cuotas.pts, '/12', fb.pts.detalleNegociacion.cuotas.na?'No aplica':'' ],['Campaña', fb.pts.detalleNegociacion.camp.pts,   '/10', fb.pts.detalleNegociacion.camp.na?'No aplica':'' ],['Abono',   fb.pts.detalleNegociacion.abono.pts,  '/6',  fb.pts.detalleNegociacion.abono.na?'No aplica':'' ]];
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(evalAOA),'Evaluación');
+    const cta=getCuentaActual();
+    const fichaAOA=[['Ficha de Información'],['Razón Social',rz.value],['Documento',doc.value],['Dirección',dir.value],['Edad',edad.value],['Salario',sal.value],[],['Gestión de Contacto'],['Teléfono',telefono.value||''],['Tipo de Contacto',tipoSel.value||''],['Resultado',resultadoSel.value||''],['Observación',obs.value||''],[],['Detalle de la Cuenta'],['Campaña',cta.camp||''],['Producto',cta.prod||''],['D. Total',cta.dtotal||''],['M. Capital',cta.mcap||''],['M. Campaña',cta.mcamp||''],['Días Mora',cta.dias||''],['% Descuento',cta.desc||'']];
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(fichaAOA),'Ficha');
+    const compAOA=[['Monto','Fecha','Tipo','Subir al banco']]; compromisos.forEach(c=>compAOA.push([c.monto,c.fecha,c.tipo,c.subir?'Sí':'No']));
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(compAOA),'Compromisos');
+    const out=XLSX.write(wb,{bookType:'xlsx',type:'array'}); const blob=new Blob([out],{type:'application/octet-stream'});
+    const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='reporte_simulador.xlsx'; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),1200);
+  });
+
+  /* Feedback (cálculo) */
+  function getCuentaActual(){ const tr=document.querySelector('#cuentaBody tr'); if(!tr) return {}; const td=tr.children; return {camp:td[0].textContent, prod:td[1].textContent, dtotal:td[2].textContent, mcap:td[3].textContent, mcamp:td[4].textContent, dias:td[5].textContent, desc:td[6].textContent}; }
+  function computeFeedback(){
+    const asesorMsgs=[...document.querySelectorAll('.msg.asesor')].map(m=>m.textContent.replace(/^👤 Asesor: /,''));
+    const clienteMsgs=[...document.querySelectorAll('.msg.cliente')].map(m=>m.textContent.replace(/^🤖 Cliente: /,''));
+    const bpMsgs=[...document.querySelectorAll('.msg')].map((m,i)=>({i,role:m.classList.contains('asesor')?'Asesor':'Cliente',text:m.textContent.replace(/^👤 Asesor: |^🤖 Cliente: /,''),bp:m.dataset.breakpoint||''}));
+    return computeFeedbackFromMessages(asesorMsgs, clienteMsgs, bpMsgs);
+  }
+  function normalize(s){return (s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')}
+  function extractDebt(){const r=document.querySelector('#cuentaBody tr'); if(!r) return {total:null}; const t=r.children[2].textContent; const n=+(t.replace(/[^0-9]/g,'')); return {total:isNaN(n)?null:n}}
+  const RX={escasez:/(solo\s*hoy|hoy\s*mismo|vence|hasta\s*hoy|ultima?s?\s*plazas|cupos?|vigencia|promoci[oó]n\s*(term|vence)|fecha\s*l[ií]mite|expira|se\s*agota)/, autoridad:/(asesor(?:\s*especializad[oa])|especialista|a[nñ]os?\s+de\s+experiencia|experiencia\s+de\s+\d+)/, consistencia:/(buen\s+pagador|historial\s+crediticio|siempre\s+cumpli[oó]|antes\s+acept[oó]\s+una\s+negociaci[oó]n)/, agrado:/(entiendo|comprendo|yo\s+tambi[eé]n|me\s+pongo\s+en\s+su\s+lugar|gracias\s+por|felicita)/, consenso:/(otros\s+clientes|muchos\s+clientes|en\s+su\s+situaci[oó]n|casos\s+similares)/, reciprocidad:/(como\s+cortes[ií]a|por\s+esta\s+vez|excepci[oó]n|trato\s+preferencial|beneficio\s+adicional|le\s+ofrezco)/};
+  function computeFeedbackFromMessages(asesorMsgs, clienteMsgs, bpMsgs){
+    const tokens=(rz.value||'').trim().split(/\s+/); const apellidos=[tokens[0]||'',tokens[1]||'']; const nombres=tokens.slice(2); const first=nombres[0]||'';
+    const nMsgs=asesorMsgs.map(normalize); const debt=extractDebt();
+    const greet=/(hola|buenos dias|buenas tardes|buenas noches|que tal|como estas|como te va)/;
+    const hasGreeting=nMsgs.slice(0,5).some(m=>greet.test(m));
+    const usedFirstOnly=nMsgs.slice(0,5).some(m=>m.includes(normalize(first)) && !(apellidos[0] && m.includes(normalize(apellidos[0]))));
+    const validatedFull=nMsgs.some(m=> (apellidos[0] && m.includes(normalize(apellidos[0]))) && (apellidos[1]? m.includes(normalize(apellidos[1])):true) && (nombres.some(nn=>m.includes(normalize(nn)))));
+    const bankMention=nMsgs.some(m=>/(banco|bbva|bcp|scotiabank|interbank|nacion|dupree|natura)/.test(m));
+    const helpWord=nMsgs.some(m=>/(asesorar|asesorarl[oa]|ayudar|acompanar|acompañ)/.test(m));
+    const saludo10 = (hasGreeting && usedFirstOnly ? 3 : hasGreeting || usedFirstOnly ? 2 : 0) + (validatedFull ? 3 : 0) + ((bankMention?2:0) + (helpWord?2:0));
+    const prod=/(tarjeta|credito\s*personal|pr[eé]stamo|consumo|micro\s*empresa|cat[aá]logo|perfume|crema)/;
+    const hasProduct=nMsgs.some(m=>prod.test(m));
+    const moraMention=nMsgs.some(m=>/(mora|dias|d[ií]as|años|anios)/.test(m)&&/\d{1,4}/.test(m));
+    const amountRegex=/(\d{1,3}([.,]\d{3})+|\d{4,})([.,]\d{2})?/;
+    const amountMention=nMsgs.some(m=>amountRegex.test(m));
+    const exactAmount=debt.total? nMsgs.some(m=>{const mm=m.match(amountRegex); if(!mm) return false; const v=+(mm[0].replace(/\D/g,'')); return Math.abs(v-debt.total)<1;}):false;
+    const probeSituation=nMsgs.some(m=>/\?/.test(m) && /(trabaj|ingres|gasto|apoya|pareja|famil|sustent)/.test(m));
+    const askMonto=nMsgs.some(m=>/\?/.test(m) && RX_BP.askMonto.test(m));
+    const motivo30 = (hasProduct ? 6 : 0) + (moraMention ? 6 : 0) + (amountMention ? (exactAmount?6:5) : 0) + (probeSituation ? 6 : 0) + (askMonto ? 6 : 0);
+    const idx=rx=>nMsgs.findIndex(m=>rx.test(m)); const iCapital=idx(/capital/), iCuotas=idx(/cuota/), iCamp=idx(/campan(a|o)|campana|descuento/), iAbono=idx(/abono|propuesta/);
+    const hierarchyOk=[iCapital,iCuotas,iCamp,iAbono].every(i=>i>=0) && (iCapital<=iCuotas||iCuotas<0) && (iCuotas<=iCamp||iCamp<0) && (iCamp<=iAbono||iAbono<0);
+    const urgency=nMsgs.some(m=>RX_BP.urg.test(m)); const hasEscasez = nMsgs.some(m=>RX.escasez.test(m));
+    const otherTechs = [RX.autoridad, RX.consistencia, RX.agrado, RX.consenso, RX.reciprocidad].reduce((acc,rx)=> acc + (nMsgs.some(m=>rx.test(m))?1:0), 0);
+    const clienteAll = clienteMsgs.map(normalize); const acceptIdx = clienteAll.findIndex(m=>RX_BP.cierreCliente.test(m));
+    const ofertaOrden = [{key:'capital', idx:iCapital, basePts:18, naPts:0},{key:'cuotas',idx:iCuotas,basePts:12, naPts:10},{key:'camp',idx:iCamp,basePts:10,naPts:10},{key:'abono',idx:iAbono,basePts:6,naPts:5}];
+    let acceptedStage=null;
+    if(acceptIdx>=0){ const offeredBefore = ofertaOrden.filter(o=>o.idx>=0); acceptedStage = offeredBefore.length? offeredBefore.sort((a,b)=>b.idx-a.idx)[0].key : 'otra'; }
+    let ptsCapital= (iCapital>=0?18:0), ptsCuotas=(iCuotas>=0?12:0), ptsCamp=(iCamp>=0?10:0), ptsAbono=(iAbono>=0 && hierarchyOk?6:0);
+    let naFlags={cuotas:false,camp:false,abono:false};
+    if(acceptIdx>=0){ const order=['capital','cuotas','camp','abono']; const cutoff = acceptedStage==='otra' ? 'capital' : acceptedStage; const cutoffIndex = order.indexOf(cutoff);
+      if(cutoffIndex>=0){ if(order.indexOf('cuotas')>cutoffIndex){ptsCuotas=10; naFlags.cuotas=true;} if(order.indexOf('camp')>cutoffIndex){ptsCamp=10;   naFlags.camp=true;} if(order.indexOf('abono')>cutoffIndex){ptsAbono=5;  naFlags.abono=true;} }
+      else { ptsCuotas=10; naFlags.cuotas=true; ptsCamp=10; naFlags.camp=true; ptsAbono=5; naFlags.abono=true; } }
+    const ofrecimientos46=ptsCapital+ptsCuotas+ptsCamp+ptsAbono;
+    const urg4 = urgency?4:0; const tecnicas6 = (hasEscasez ? 3 : 0) + Math.min(2, otherTechs) * 1.5;
+    const manejoObj4 = (nMsgs.some(m=>/(entiendo|comprendo|como\s*cortes[ií]a|beneficio|consecuencia|nos\s*ayudar[ií]a)/.test(m)) ? 4 : 0);
+    const negociacion60 = Math.round(ofrecimientos46 + urg4 + tecnicas6 + manejoObj4);
+    const totalScore = Math.max(0, Math.min(100, Math.round(saludo10 + motivo30 + negociacion60)));
+    const strengths=[], improvements=[];
+    if(hasGreeting) strengths.push('Saludó correctamente.'); if(usedFirstOnly) strengths.push('Usó solo el primer nombre al inicio.'); if(validatedFull) strengths.push('Validó nombre y dos apellidos.'); if(bankMention) strengths.push('Mencionó el banco/entidad.'); if(helpWord) strengths.push('Usó “asesorarlo/ayudarlo/acompañarlo”.');
+    if(hasProduct) strengths.push('Indicó el producto.'); if(moraMention) strengths.push('Mencionó días/años de mora.'); if(amountMention) strengths.push('Indicó el monto total.'); if(probeSituation) strengths.push('Indagó la situación.'); if(askMonto) strengths.push('Preguntó si tiene monto para pagar.');
+    if(iCapital>=0) strengths.push('Cobró el capital.'); if(iCuotas>=0 && !naFlags.cuotas) strengths.push('Ofreció cuotas.'); if(iCamp>=0 && !naFlags.camp) strengths.push('Ofreció monto campaña.'); if(iAbono>=0 && hierarchyOk && !naFlags.abono) strengths.push('Abono/propuesta como última opción.'); if(hierarchyOk) strengths.push('Respetó jerarquía.'); if(urgency) strengths.push('Aplicó urgencia.'); if(hasEscasez) strengths.push('Usó escasez.'); if(otherTechs>=1) strengths.push('Aplicó otras técnicas.');
+    if(!hasGreeting) improvements.push('Iniciar con un saludo claro.'); if(!usedFirstOnly) improvements.push('Saludar con solo el primer nombre.'); if(!validatedFull) improvements.push('Validar nombre y dos apellidos.'); if(!bankMention) improvements.push('Mencionar el banco al presentarse.'); if(!helpWord) improvements.push('Usar “asesorarlo/ayudarlo/acompañarlo”.');
+    if(!hasProduct) improvements.push('Mencionar el producto.'); if(!moraMention) improvements.push('Indicar la mora.'); if(!amountMention) improvements.push('Indicar el monto total.'); if(amountMention && !exactAmount && debt.total) improvements.push('Mencionar exactamente el monto total de la ficha.');
+    if(!probeSituation) improvements.push('Indagar trabajo/ingresos/gastos/apoyo.'); if(!askMonto) improvements.push('Preguntar si tiene monto para pagar.');
+    if(iCapital<0) improvements.push('Cobrar el capital primero.'); if(iCuotas<0 && !naFlags.cuotas) improvements.push('Ofrecer cuotas del capital.'); if(iCamp<0 && !naFlags.camp) improvements.push('Ofrecer monto campaña.'); if(iAbono<0 && !naFlags.abono) improvements.push('Ofrecer abono/propuesta solo al final.');
+    if(!hierarchyOk && !(naFlags.cuotas||naFlags.camp||naFlags.abono)) improvements.push('Respetar jerarquía: capital → cuotas → campaña → abono.'); if(!urgency) improvements.push('Aplicar urgencia: hoy o 24/48/72 horas.'); if(!hasEscasez) improvements.push('Usar escasez (vigencia, cupos, vence).'); if(otherTechs<2) improvements.push('Usar 2 técnicas extra (autoridad, consistencia, agrado, consenso, reciprocidad).');
+    return { totalScore, pts:{saludo10, motivo30, negociacion60, detalleNegociacion:{capital:ptsCapital, cuotas:{pts:ptsCuotas,na:naFlags.cuotas}, camp:{pts:ptsCamp,na:naFlags.camp}, abono:{pts:ptsAbono,na:naFlags.abono}, urgencia:urg4, tecnicas:tecnicas6, objeciones:manejoObj4}}, strengths, improvements, meta:{firstName:first,apellidos,nombres,debt, acceptIdx, acceptedStage: acceptIdx>=0 ? (acceptedStage||'otra') : null}, breakpoints: bpMsgs };
+  }
+
+  /* Feedback UI y capturas PNG */
+  document.getElementById('btnFeedback').addEventListener('click',()=>{
+    const fb=computeFeedback(); const fullName=`${fb.meta.firstName} ${fb.meta.apellidos.join(' ')}`.trim(); const topImprovements=fb.improvements.slice(0,4);
+    const naTag = (o)=> o.na ? ` <span class="pill" style="background:#fde68a;border-color:#fbbf24;color:#7c2d12">No aplica</span>` : '';
+    const tips = [
+      ['Pregunta monto disponible',['“¿Con cuánto podrías aportar hoy?”','Rangos: “¿Entre S/100 y S/200?”','Tiempo: “¿24 o 48 horas?”']],
+      ['Oferta capital',['Beneficio: reduces intereses.','Escasez: vigencia hoy / 24–48–72h.']],
+      ['Oferta cuotas',['Número de cuotas y aprox.','Cupos limitados.']],
+      ['Oferta monto campaña',['% ahorro y fecha límite.','Condiciones 24–48h.']],
+      ['Oferta abono/propuesta',['Solo última opción; monto-fecha.','Consistencia: “antes fuiste buen pagador”.']],
+      ['Urgencia de pago',['Hoy / 24 / 48 / 72h.','Beneficio vs consecuencia.']],
+      ['Cierre / aceptación',['Confirmar monto-fecha-canal.','Agradecer y dejar constancia.']]
+    ];
+    const tipsHTML = tips.map(([k,arr])=>`<li><strong>${k}:</strong><ul class="tips">${arr.map(t=>`<li>${t}</li>`).join('')}</ul></li>`).join('');
+    document.getElementById('fbBody').innerHTML = `
+      <div class="kpi" style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:12px">
+        <div><strong>Puntaje total:</strong> <span class="pill">${fb.totalScore}/100</span></div>
+        <div><strong>Saludo (10%):</strong> <span class="pill">${fb.pts.saludo10}/10</span></div>
+        <div><strong>Motivo+Sondeo (30%):</strong> <span class="pill">${fb.pts.motivo30}/30</span></div>
+        <div><strong>Negociación (60%):</strong> <span class="pill">${fb.pts.negociacion60}/60</span></div>
+      </div>
+      <div class="kpi" style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:8px">
+        <div class="pill"><strong>Capital:</strong> ${fb.pts.detalleNegociacion.capital}/18</div>
+        <div class="pill"><strong>Cuotas:</strong> ${fb.pts.detalleNegociacion.cuotas.pts}/12 ${naTag(fb.pts.detalleNegociacion.cuotas)}</div>
+        <div class="pill"><strong>Campaña:</strong> ${fb.pts.detalleNegociacion.camp.pts}/10 ${naTag(fb.pts.detalleNegociacion.camp)}</div>
+        <div class="pill"><strong>Abono:</strong> ${fb.pts.detalleNegociacion.abono.pts}/6 ${naTag(fb.pts.detalleNegociacion.abono)}</div>
+      </div>
+      <div style="margin-bottom:8px"><strong>Cliente:</strong> <span class="pill">${fullName||rz.value}</span></div>
+      <h4>✅ Lo que hiciste bien</h4><ul>${(fb.strengths.length?fb.strengths:['—']).map(s=>`<li>${s}</li>`).join('')}</ul>
+      <h4>🛠️ Oportunidades de mejora</h4><ul class="improve">${(topImprovements.length?topImprovements:['—']).map(s=>`<li>⚠️ ${s}</li>`).join('')}</ul>
+      <h4>💡 Qué pudo mencionar el asesor en cada punto de quiebre</h4><ul>${tipsHTML}</ul>
+      <details><summary>Ver lista completa de mejoras</summary><ul class="improve">${(fb.improvements.length?fb.improvements:['—']).map(s=>`<li>⚠️ ${s}</li>`).join('')}</ul></details>
+      <h4>🔎 Marcadores del chat</h4><div class="muted" style="font-size:12px">En el chat, los puntos de quiebre aparecen <span style="background:#fff59d;padding:2px 6px;border-radius:6px">resaltados</span> con etiqueta.</div>
+    `;
+    document.getElementById('modalFeedback').classList.add('open');
+  });
+
+  document.getElementById('btnDownloadFB').addEventListener('click', async ()=>{
+    const modalCard = document.getElementById('modalCard');
+    const clone = modalCard.cloneNode(true);
+    const bodyClone = clone.querySelector('.modal-body'); if(bodyClone){bodyClone.style.maxHeight='none'; bodyClone.style.overflow='visible';}
+    clone.querySelectorAll('details').forEach(d=>d.setAttribute('open','true')); clone.style.boxShadow='none';
+    const wrapper = document.createElement('div');
+    Object.assign(wrapper.style,{position:'fixed',left:'0',top:'0',opacity:'0',pointerEvents:'none',background:'#fff',width:modalCard.offsetWidth+'px'});
+    wrapper.appendChild(clone); document.body.appendChild(wrapper);
+    await new Promise(r=>requestAnimationFrame(r));
+    try{
+      const canvas = await html2canvas(clone,{scale:2,useCORS:true,backgroundColor:'#ffffff',windowWidth:clone.scrollWidth});
+      canvas.toBlob(blob=>{ const a=document.createElement('a'); a.download='feedback_simulador.png'; a.href=URL.createObjectURL(blob); a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),1200); },'image/png');
+    }finally{ wrapper.remove(); }
+  });
+
+  document.getElementById('chatImg').addEventListener('click', async ()=>{
+    const chatEl = document.getElementById('chat');
+    if(!chatEl.children.length){ alert('No hay mensajes en el chat.'); return; }
+    const clone = chatEl.cloneNode(true);
+    clone.classList.remove('blurred'); clone.style.maxHeight='none'; clone.style.overflow='visible'; clone.style.background='#ffffff';
+    const wrapper = document.createElement('div');
+    Object.assign(wrapper.style,{position:'fixed',left:'0',top:'0',opacity:'0',pointerEvents:'none',background:'#fff',width:chatEl.offsetWidth+'px'});
+    wrapper.appendChild(clone); document.body.appendChild(wrapper);
+    await new Promise(r=>requestAnimationFrame(r));
+    try{
+      const canvas = await html2canvas(clone,{scale:2,useCORS:true,backgroundColor:'#ffffff',windowWidth:clone.scrollWidth});
+      canvas.toBlob(blob=>{ if(!blob){alert('No se pudo generar la imagen del chat.');return;} const a=document.createElement('a'); a.download='chat_completo.png'; a.href=URL.createObjectURL(blob); a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),1200); },'image/png');
+    }finally{ wrapper.remove(); }
+  });
+
+  /* Drawer / Mic */
+  document.getElementById('btnVerChat').addEventListener('click',()=>drawer.classList.add('open'));
+  document.getElementById('closeDrawer').addEventListener('click',()=>drawer.classList.remove('open'));
+  const btnStart=document.getElementById('micStart'), btnPause=document.getElementById('micPause'), btnResume=document.getElementById('micResume'), btnStop=document.getElementById('micStop');
+  function updateMicButtons(){
+    btnStart.disabled = conversationLocked || (recognition && recognitionListening());
+    btnPause.disabled = conversationLocked || !recognition || !recognitionListening();
+    btnResume.disabled = conversationLocked || !conversationPaused;
+    btnStop.disabled = conversationLocked || !recognitionListening();
+  }
+  async function ensureMicPermission(){
+    try{ if(navigator.mediaDevices?.getUserMedia){ const s=await navigator.mediaDevices.getUserMedia({audio:true}); s.getTracks().forEach(t=>t.stop()); } return true; }catch{ return false; }
+  }
+  async function startListening(){
+    if(conversationLocked) return alert('Esta conversación fue finalizada. Inicia una nueva.');
+    const ok = recognition ? await ensureMicPermission() : false;
+    if(recognition && ok){ recognition.start(); setRecStatus('Grabando…'); setListening(true); conversationPaused=false; drawer.classList.add('open'); }
+    else { alert('Reconocimiento de voz no disponible en este navegador.'); }
+  }
+  function pauseListening(){ if(!recognition || !recognitionListening()) return; conversationPaused=true; try{recognition.stop();}catch{} setRecStatus('Pausada'); setListening(false); }
+  async function resumeListening(){ if(conversationLocked) return alert('Esta conversación fue finalizada. Inicia una nueva.'); if(!recognition || !conversationPaused) return; await startListening(); }
+  function stopListeningAndLock(){ if(recognitionListening()){ try{recognition.stop();}catch{} } chat.classList.remove('blurred'); conversationLocked=true; queue=[]; processing=false; setRecStatus('Conversación finalizada'); updateMicButtons(); alert('Conversación finalizada. El chat ahora es visible y no se puede continuar esta misma conversación.'); }
+  btnStart.addEventListener('click',startListening); btnPause.addEventListener('click',pauseListening); btnResume.addEventListener('click',resumeListening); btnStop.addEventListener('click',stopListeningAndLock);
+
+  /* Botones generales */
+  function limpiar(){ tipoSel.selectedIndex=0; setResultadoOptions(undefined); resultadoSel.innerHTML='<option>-- Seleccionar Resultado --</option>'; obs.value=''; compromisos=[]; renderCompromisos(); document.getElementById('compromisosBox').classList.add('is-hidden'); }
+  document.getElementById('btnLimpiar').addEventListener('click',limpiar);
+  /* Carga cliente / resets */
+  let idxCliente=0;
+  function cargarClienteDemo(tipo, i){
+    const arr=( { banco: clientesBanco, dupree: clientesDupree, natura: clientesNatura }[tipo] )||[];
+    const c=arr[i]; if(!c) return;
+    rz.value=c.rz; doc.value=c.doc; dir.value=c.dir; edad.value=c.edad; sal.value=c.sal;
+    telefono.innerHTML=''; c.phones.forEach(p=>{const o=document.createElement('option');o.textContent=p;telefono.appendChild(o)});
+    cuentaBody.innerHTML=`<tr><td>${c.cuenta.camp}</td><td>${c.cuenta.prod}</td><td>${c.cuenta.dtotal}</td><td>${c.cuenta.mcap}</td><td>${c.cuenta.mcamp}</td><td>${c.cuenta.dias}</td><td>${c.cuenta.desc}</td></tr>`;
+  }
+
+  /* Init */
+  cargarClienteDemo(tipoClienteSel, idxCliente); updateMicButtons(); setRecStatus('Esperando…');
+  tipoClienteSelect.addEventListener('change', e=>{
+    tipoClienteSel=e.target.value; idxCliente=0; cargarClienteDemo(tipoClienteSel, idxCliente);
+    historial=[{role:'system',content:promptsIniciales[tipoClienteSel]}]; rolActivado=false;
+    chat.innerHTML=''; chat.classList.add('blurred'); conversationLocked=false; conversationPaused=false; setRecStatus('Esperando…'); updateMicButtons();
+    limpiar(); drawer.classList.remove('open');
+  });
+  document.getElementById('btnNueva').addEventListener('click',()=>{
+    const arr=( { banco: clientesBanco, dupree: clientesDupree, natura: clientesNatura }[tipoClienteSel] )||[];
+    idxCliente=(idxCliente+1)%(arr.length||1); cargarClienteDemo(tipoClienteSel, idxCliente);
+    historial=[{role:'system',content:promptsIniciales[tipoClienteSel]}]; rolActivado=false;
+    chat.innerHTML=''; chat.classList.add('blurred'); conversationLocked=false; conversationPaused=false; setRecStatus('Esperando…'); updateMicButtons();
+    limpiar(); drawer.classList.remove('open');
+  });
+  document.getElementById('resultado').addEventListener('change',()=>{
+    const tb=document.getElementById('historialBody');
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${rz.value}</td><td>${tipoSel.value}</td><td>${resultadoSel.value}</td><td>${(obs.value||'').replace(/</g,'&lt;')}</td>`;
+    tb.querySelector('td[colspan]')?.parentElement?.remove(); tb.appendChild(tr);
+  });
+  document.getElementById('btnCloseFB').addEventListener('click',()=>document.getElementById('modalFeedback').classList.remove('open'));
+  </script>
+</body>
+</html>
